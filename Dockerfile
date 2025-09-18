@@ -1,36 +1,38 @@
-FROM node:18-alpine
-
-# Set working directory
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install ALL dependencies
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
+# Copy source code and build TypeScript
+COPY . .
+RUN npm run build
+
+# Stage 2: Production
+FROM node:20-alpine
+WORKDIR /app
+
+# Copy only package files and install production dependencies
+COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy source code
-COPY . .
-
-# Build the application
-RUN npm run build
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/public ./public
 
 # Create logs directory
 RUN mkdir -p logs
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN adduser -S backend -u 1001
+USER backend
 
-# Change ownership
-USER nextjs
-
-# Expose port
+# Expose port (Render injects PORT automatically)
 EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
-
-# Start the application
-CMD ["npm", "start"]
+# Start application
+CMD ["node", "dist/index.js"]
