@@ -4,8 +4,7 @@ import { JobProcessor } from "../jobs/job.processor";
 
 // Redis connection config
 const connection = {
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: parseInt(process.env.REDIS_PORT || "6379", 10),
+  url: process.env.REDIS_URL!, // e.g. rediss://default:password@host:6379
 };
 
 // Create queues

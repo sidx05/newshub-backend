@@ -4,7 +4,7 @@ dotenv.config();
 
 import express from "express";
 import connectDB from "./config/database";
-import { createClient } from "redis";
+import { Redis } from "@upstash/redis";
 import { createBullMQ, scheduleScrapingJob } from "./config/bullmq";
 import { setupRoutes } from "./routes";
 import { setupMiddleware } from "./middleware";
@@ -20,24 +20,16 @@ const PORT: number = parseInt(process.env.PORT || "3001", 10);
 
 export const app = express();
 
-export const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+export const redisClient = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-redisClient.on("error", (err) => {
-  logger.error("Redis Client Error:", err);
-});
-redisClient.on("connect", () => {
-  logger.info("Connected to Redis");
-});
 
 async function startServer() {
   try {
     // ensure DB connection before starting other services
     await connectDB();
-
-    // Connect Redis
-    await redisClient.connect();
 
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
@@ -91,7 +83,6 @@ async function startServer() {
     const graceful = async () => {
       logger.info("Graceful shutdown initiated");
       try {
-        await redisClient.quit();
       } catch (e) {
         logger.error("Error quitting redis", e);
       }

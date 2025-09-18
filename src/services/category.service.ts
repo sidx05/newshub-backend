@@ -1,3 +1,5 @@
+// backend/src/services/category.service.ts
+
 import { Category } from '../models';
 import { redisClient } from '../index';
 import { logger } from '../utils/logger';
@@ -7,11 +9,12 @@ export class CategoryService {
     try {
       // Try to get from cache first
       const cacheKey = 'categories:all';
-      const cachedCategories = await redisClient.get(cacheKey);
-      
+      const cachedCategories = await redisClient.get<string>(cacheKey);
+
       if (cachedCategories) {
         return JSON.parse(cachedCategories);
       }
+
 
       // Get from database
       const categories = await Category.find()
@@ -19,8 +22,7 @@ export class CategoryService {
         .populate('parent', 'key label');
 
       // Cache for 1 hour
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(categories));
-
+      await redisClient.set(cacheKey, JSON.stringify(categories), { ex: 3600 });
       return categories;
     } catch (error) {
       logger.error('Get categories error:', error);
