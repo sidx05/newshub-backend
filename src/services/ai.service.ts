@@ -21,7 +21,7 @@ export interface RewriteOptions {
 }
 
 export class AIService {
-  private zai: ZAI | null = null;
+  private zai: typeof ZAI | null = null;
 
   constructor() {
     // this.initializeAI();

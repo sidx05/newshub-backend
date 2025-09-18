@@ -17,7 +17,7 @@ export class AuthService {
         email: input.email,
         passwordHash: input.password, // Will be hashed by pre-save hook
         role: input.role,
-      });2
+      });
 
       await user.save();
 

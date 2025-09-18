@@ -82,7 +82,7 @@ export class ArticleService {
       const cacheKey = `article:${slug}`;
       const cachedArticle = await redisClient.get(cacheKey);
       
-      if (cachedArticle) {
+      if (typeof cachedArticle === 'string') {
         return JSON.parse(cachedArticle);
       }
 
@@ -99,7 +99,7 @@ export class ArticleService {
       await Article.findByIdAndUpdate(article._id, { $inc: { viewCount: 1 } });
 
       // Cache for 1 hour
-      await redisClient.setEx(cacheKey, 3600, JSON.stringify(article));
+      await redisClient.setex(cacheKey, 3600, JSON.stringify(article));
 
       return article;
     } catch (error) {
@@ -117,7 +117,7 @@ export class ArticleService {
       const cacheKey = `trending:${limit}`;
       const cachedTrending = await redisClient.get(cacheKey);
       
-      if (cachedTrending) {
+      if (typeof cachedTrending === 'string') {
         return JSON.parse(cachedTrending);
       }
 
@@ -135,7 +135,7 @@ export class ArticleService {
         .limit(limitNum);
 
       // Cache for 30 minutes
-      await redisClient.setEx(cacheKey, 1800, JSON.stringify(trending));
+      await redisClient.setex(cacheKey, 1800, JSON.stringify(trending));
 
       return trending;
     } catch (error) {
@@ -198,13 +198,13 @@ export class ArticleService {
       // Clear trending cache
       const keys = await redisClient.keys('trending:*');
       if (keys.length > 0) {
-        await redisClient.del(keys);
+        await redisClient.del(...keys);
       }
 
       // Clear article caches (this could be more specific in production)
       const articleKeys = await redisClient.keys('article:*');
       if (articleKeys.length > 0) {
-        await redisClient.del(articleKeys);
+        await redisClient.del(...articleKeys);
       }
     } catch (error) {
       logger.error('Clear article caches error:', error);

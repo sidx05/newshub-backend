@@ -9,7 +9,7 @@ export class TickerService {
       const cacheKey = 'tickers:active';
       const cachedTickers = await redisClient.get(cacheKey);
       
-      if (cachedTickers) {
+      if (cachedTickers && typeof cachedTickers === 'string') {
         return JSON.parse(cachedTickers);
       }
 
@@ -21,7 +21,7 @@ export class TickerService {
         .sort({ priority: -1, createdAt: -1 });
 
       // Cache for 5 minutes
-      await redisClient.setEx(cacheKey, 300, JSON.stringify(tickers));
+      await redisClient.setex(cacheKey, 300, JSON.stringify(tickers));
 
       return tickers;
     } catch (error) {

@@ -1,8 +1,9 @@
+// backend/src/services/scraping.service.ts
 import Parser from "rss-parser";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import crypto from "crypto";
-import { db } from '../../../src/lib/db';
+import { db } from '../lib/db';
 import { logger } from "../utils/logger"; // make sure this exists
 
 export interface ScrapedArticle {

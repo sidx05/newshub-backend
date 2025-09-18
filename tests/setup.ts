@@ -24,8 +24,17 @@ afterEach(async () => {
 // Close connections after all tests
 afterAll(async () => {
   await mongoose.connection.close();
-  if (redisClient.status === 'ready') {
-    await redisClient.quit();
-  }
   logger.info('Test database connections closed');
 });
+
+function beforeAll(arg0: () => Promise<void>) {
+  throw new Error('Function not implemented.');
+}
+function afterEach(arg0: () => Promise<void>) {
+  throw new Error('Function not implemented.');
+}
+
+function afterAll(arg0: () => Promise<void>) {
+  throw new Error('Function not implemented.');
+}
+
