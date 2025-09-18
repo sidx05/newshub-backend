@@ -1,19 +1,21 @@
-# Stage 1: Build
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install bash/git needed for some packages
+# Install bash/git for convenience
 RUN apk add --no-cache bash git
 
-# Copy package files and install all dependencies (including dev)
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
-# Install TypeScript globally to fix tsc permission issues
-RUN npm install -g typescript
+# Install all dependencies for building
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Install TypeScript globally
+RUN npm install -g typescript
 
 # Build TypeScript
 RUN tsc
@@ -22,12 +24,14 @@ RUN tsc
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy only package files and install production dependencies
+# Copy package files and install only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/public ./public
 
 # Create logs directory
 RUN mkdir -p logs
@@ -37,8 +41,8 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S worker -u 1001
 USER worker
 
-# Expose port (optional, only if worker listens on HTTP)
-# EXPOSE 3001
+# Expose port if needed (optional for worker)
+EXPOSE 3001
 
-# Start the worker
+# Start the worker process
 CMD ["npm", "run", "worker"]
