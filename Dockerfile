@@ -2,13 +2,21 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files and install ALL dependencies
+# Install bash/git needed for some packages
+RUN apk add --no-cache bash git
+
+# Copy package files and install all dependencies (including dev)
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code and build TypeScript
+# Install TypeScript globally to fix tsc permission issues
+RUN npm install -g typescript
+
+# Copy source code
 COPY . .
-RUN npm run build
+
+# Build TypeScript
+RUN tsc
 
 # Stage 2: Production
 FROM node:20-alpine
@@ -16,11 +24,10 @@ WORKDIR /app
 
 # Copy only package files and install production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src ./src
 COPY --from=builder /app/public ./public
 
 # Create logs directory
@@ -31,7 +38,7 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 USER backend
 
-# Expose port (Render injects PORT automatically)
+# Expose port (Render will assign PORT automatically)
 EXPOSE 3001
 
 # Start application
