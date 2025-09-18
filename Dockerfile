@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install bash and git
+# Install bash and git (needed for some build tools)
 RUN apk add --no-cache bash git
 
 # Copy package files and install all dependencies (dev + prod)
@@ -12,16 +12,16 @@ RUN npm ci
 # ✅ Copy Prisma folder before generating client
 COPY prisma ./prisma
 
-# ✅ Generate Prisma client (must happen before copying the rest of the app)
+# ✅ Generate Prisma client
 RUN npx prisma generate
 
-# Copy rest of the source code
+# Copy the rest of the source code
 COPY . .
 
 # Install TypeScript globally
 RUN npm install -g typescript
 
-# Compile TypeScript to JavaScript
+# ✅ Compile TypeScript to JavaScript
 RUN tsc
 
 
@@ -29,14 +29,17 @@ RUN tsc
 FROM node:20-alpine
 WORKDIR /app
 
-# Only production dependencies
+# Install only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy compiled output
+# ✅ Copy compiled app
 COPY --from=builder /app/dist ./dist
 
-# ✅ Copy Prisma schema folder and generated client
+# ✅ Copy required static files for runtime
+COPY --from=builder /app/src/config/swagger.yaml ./dist/config/swagger.yaml
+
+# ✅ Copy Prisma files and generated client
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
@@ -44,11 +47,13 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Optional: logs folder
 RUN mkdir -p logs
 
-# Set up non-root user
+# ✅ Create non-root user for better security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 USER backend
 
+# Application port
 EXPOSE 3001
 
+# ✅ Start application
 CMD ["node", "dist/index.js"]
