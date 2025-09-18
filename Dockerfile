@@ -1,19 +1,21 @@
-# Stage 1: Build
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install bash/git needed for some packages
+# Install bash/git for convenience
 RUN apk add --no-cache bash git
 
-# Copy package files and install all dependencies (including dev)
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
-# Install TypeScript globally to fix tsc permission issues
-RUN npm install -g typescript
+# Install all dependencies (dev + prod) for building
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Install TypeScript globally to run tsc
+RUN npm install -g typescript
 
 # Build TypeScript
 RUN tsc
@@ -38,8 +40,8 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 USER backend
 
-# Expose port (Render will assign PORT automatically)
+# Expose port (Render injects PORT automatically)
 EXPOSE 3001
 
-# Start application
+# Start the backend
 CMD ["node", "dist/index.js"]
