@@ -24,6 +24,10 @@ RUN npm install -g typescript
 # ✅ Compile TypeScript to JavaScript
 RUN tsc
 
+# ✅ Manually copy swagger.yaml into dist/config
+RUN mkdir -p dist/config
+RUN cp src/config/swagger.yaml dist/config/swagger.yaml
+
 
 # Stage 2: Production
 FROM node:20-alpine
@@ -35,9 +39,6 @@ RUN npm ci --omit=dev
 
 # ✅ Copy compiled app
 COPY --from=builder /app/dist ./dist
-
-# ✅ Copy required static files for runtime
-COPY --from=builder /app/src/config/swagger.yaml ./dist/config/swagger.yaml
 
 # ✅ Copy Prisma files and generated client
 COPY --from=builder /app/prisma ./prisma
